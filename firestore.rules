@@ -1,0 +1,117 @@
+rules_version = "2";
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+    function isOwner() {
+      return signedIn() && request.auth.token.email == "owner@callme.local";
+    }
+    function isFriend() {
+      return signedIn() && request.auth.token.email == "friends@callme.local";
+    }
+    function emptyWeek() {
+      return request.resource.data.available.tue == false
+        && request.resource.data.available.wed == false
+        && request.resource.data.available.thu == false
+        && request.resource.data.taken.tue == false
+        && request.resource.data.taken.wed == false
+        && request.resource.data.taken.thu == false
+        && (
+          !("preferred" in request.resource.data)
+          || (
+            request.resource.data.preferred.tue == false
+            && request.resource.data.preferred.wed == false
+            && request.resource.data.preferred.thu == false
+          )
+        );
+    }
+    function preservedTaken() {
+      return request.resource.data.taken.tue == resource.data.taken.tue
+        && request.resource.data.taken.wed == resource.data.taken.wed
+        && request.resource.data.taken.thu == resource.data.taken.thu;
+    }
+    function preservedAvailable() {
+      return request.resource.data.available.tue == resource.data.available.tue
+        && request.resource.data.available.wed == resource.data.available.wed
+        && request.resource.data.available.thu == resource.data.available.thu;
+    }
+    function preservedPreferred() {
+      return (
+          !("preferred" in resource.data)
+          && !("preferred" in request.resource.data)
+        ) || (
+          "preferred" in resource.data
+          && "preferred" in request.resource.data
+          && request.resource.data.preferred.tue == resource.data.preferred.tue
+          && request.resource.data.preferred.wed == resource.data.preferred.wed
+          && request.resource.data.preferred.thu == resource.data.preferred.thu
+        );
+    }
+    function noUnsetTaken() {
+      return (!resource.data.taken.tue || request.resource.data.taken.tue == true)
+        && (!resource.data.taken.wed || request.resource.data.taken.wed == true)
+        && (!resource.data.taken.thu || request.resource.data.taken.thu == true);
+    }
+    function claimingOpen(day) {
+      return resource.data.taken[day] == false
+        && request.resource.data.taken[day] == true
+        && resource.data.available[day] == true;
+    }
+    function oneNewClaim() {
+      return noUnsetTaken()
+        && (
+          (claimingOpen("tue") && request.resource.data.taken.wed == resource.data.taken.wed && request.resource.data.taken.thu == resource.data.taken.thu)
+          || (claimingOpen("wed") && request.resource.data.taken.tue == resource.data.taken.tue && request.resource.data.taken.thu == resource.data.taken.thu)
+          || (claimingOpen("thu") && request.resource.data.taken.tue == resource.data.taken.tue && request.resource.data.taken.wed == resource.data.taken.wed)
+        );
+    }
+    function releasingBooked(day) {
+      return resource.data.taken[day] == true
+        && request.resource.data.taken[day] == false;
+    }
+    function oneCancellation(weekId) {
+      return (
+          releasingBooked("tue")
+          && request.resource.data.taken.wed == resource.data.taken.wed
+          && request.resource.data.taken.thu == resource.data.taken.thu
+          && !existsAfter(/databases/$(database)/documents/weeks/$(weekId)/private/tue)
+        ) || (
+          releasingBooked("wed")
+          && request.resource.data.taken.tue == resource.data.taken.tue
+          && request.resource.data.taken.thu == resource.data.taken.thu
+          && !existsAfter(/databases/$(database)/documents/weeks/$(weekId)/private/wed)
+        ) || (
+          releasingBooked("thu")
+          && request.resource.data.taken.tue == resource.data.taken.tue
+          && request.resource.data.taken.wed == resource.data.taken.wed
+          && !existsAfter(/databases/$(database)/documents/weeks/$(weekId)/private/thu)
+        );
+    }
+    match /weeks/{weekId} {
+      allow read: if signedIn();
+      allow create: if signedIn() && emptyWeek();
+      allow update: if isOwner()
+        && (
+          preservedTaken()
+          || (preservedAvailable() && preservedPreferred() && oneCancellation(weekId))
+        );
+      allow update: if isFriend()
+        && preservedAvailable()
+        && preservedPreferred()
+        && (oneNewClaim() || oneCancellation(weekId));
+    }
+
+    match /weeks/{weekId}/private/{day} {
+      allow read: if isOwner();
+      allow create: if isFriend()
+        && (day == "tue" || day == "wed" || day == "thu")
+        && request.resource.data.keys().hasOnly(["name"])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() < 40;
+      allow delete: if (isOwner() || isFriend())
+        && getAfter(/databases/$(database)/documents/weeks/$(weekId)).data.taken[day] == false;
+    }
+  }
+}
