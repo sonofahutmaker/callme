@@ -15,6 +15,7 @@ import {
   formatDayLabel,
   getCallWeek,
 } from "../week.js";
+import Toast from "../components/Toast.jsx";
 import WeekStrip from "../components/WeekStrip.jsx";
 
 const QUESTIONS = {
@@ -33,6 +34,7 @@ export default function Owner() {
   const hydrated = useRef(false);
   const [cancelDay, setCancelDay] = useState(null);
   const [message, setMessage] = useState("");
+  const [toastTone, setToastTone] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -95,6 +97,7 @@ export default function Owner() {
     try {
       await cancelSignUp(week.weekId, cancelDay);
       setCancelDay(null);
+      setToastTone("canceled");
       setMessage("The call was canceled.");
     } catch (err) {
       setError(err.message);
@@ -156,7 +159,6 @@ export default function Owner() {
         ))}
         <button type="submit">Save availability</button>
       </form>
-      {message ? <p className="ok">{message}</p> : null}
       {error ? <p className="error">{error}</p> : null}
       <h2>Who signed up</h2>
       <div className="schedule">
@@ -193,6 +195,7 @@ export default function Owner() {
           </div>
         </div>
       ) : null}
+      <Toast message={message} tone={toastTone} onDismiss={() => setMessage("")} />
     </main>
   );
 }

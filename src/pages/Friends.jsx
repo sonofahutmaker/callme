@@ -3,6 +3,7 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "../AuthContext.jsx";
 import { cancelSignUp, ensureWeek, signUpForDay, subscribeToWeek } from "../firebase.js";
 import { CALL_DAYS, emptyWeekData, formatDayLabel, getCallWeek } from "../week.js";
+import Toast from "../components/Toast.jsx";
 import WeekStrip from "../components/WeekStrip.jsx";
 
 const NAME_KEY = "callme-friend-name";
@@ -27,6 +28,7 @@ export default function Friends() {
   const [name, setName] = useState(() => sessionStorage.getItem(NAME_KEY) || "");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [toastTone, setToastTone] = useState("");
 
   useEffect(() => {
     if (user?.role !== "friends") {
@@ -76,6 +78,7 @@ export default function Friends() {
       await signUpForDay(week.weekId, day, name);
       localStorage.setItem(signupKey(week.weekId, day), "true");
       setMySignups((current) => ({ ...current, [day]: true }));
+      setToastTone("booked");
       setMessage("You’re signed up.");
       setSelected(null);
     } catch (err) {
@@ -96,6 +99,7 @@ export default function Friends() {
       localStorage.removeItem(signupKey(week.weekId, cancelDay));
       setMySignups((current) => ({ ...current, [cancelDay]: false }));
       setCancelDay(null);
+      setToastTone("canceled");
       setMessage("Your signup was canceled.");
     } catch (err) {
       setError(err.message);
@@ -129,7 +133,6 @@ export default function Friends() {
         <p className="lede">
           Click a day to schedule a call. Jenni will get emailed if you sign up or cancel.
         </p>
-        {message ? <p className="ok">{message}</p> : null}
         {error ? <p className="error">{error}</p> : null}
       </header>
       <div className="schedule">
@@ -206,6 +209,7 @@ export default function Friends() {
           </div>
         </div>
       ) : null}
+      <Toast message={message} tone={toastTone} onDismiss={() => setMessage("")} />
     </main>
   );
 }
