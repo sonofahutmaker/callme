@@ -2,6 +2,7 @@ const {
   onDocumentCreated,
   onDocumentDeleted,
 } = require("firebase-functions/v2/firestore");
+const { onSchedule } = require("firebase-functions/v2/scheduler");
 const { defineSecret } = require("firebase-functions/params");
 
 const brevoApiKey = defineSecret("BREVO_API_KEY");
@@ -67,6 +68,20 @@ exports.notifyOwnerOfSignup = onDocumentCreated(
     await sendEmail(
       `${booking.name} signed up to call`,
       `${booking.name} signed up to call you on ${callDate} from 5–6pm PT.`,
+    );
+  },
+);
+
+exports.remindOwnerToSetAvailability = onSchedule(
+  {
+    schedule: "0 10 * * 0",
+    timeZone: "America/Los_Angeles",
+    secrets: [brevoApiKey, ownerEmail, senderEmail],
+  },
+  async () => {
+    await sendEmail(
+      "Set your Call Me availability",
+      "It's Sunday. Fill in Tuesday, Wednesday, and Thursday so friends can book 5–6pm PT this week.\n\nhttps://callme.jennihutson.com/",
     );
   },
 );
