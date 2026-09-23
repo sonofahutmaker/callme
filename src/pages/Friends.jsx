@@ -25,7 +25,8 @@ export default function Friends() {
   const [mySignups, setMySignups] = useState(() => loadMySignups(week.weekId));
   const [selected, setSelected] = useState(null);
   const [cancelDay, setCancelDay] = useState(null);
-  const [name, setName] = useState(() => sessionStorage.getItem(NAME_KEY) || "");
+  const [savedName, setSavedName] = useState(() => sessionStorage.getItem(NAME_KEY) || "");
+  const [draftName, setDraftName] = useState(() => sessionStorage.getItem(NAME_KEY) || "");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const pendingTaken = useRef({});
@@ -96,7 +97,11 @@ export default function Friends() {
     setError("");
     setMessage("");
     try {
-      await signUpForDay(week.weekId, day, name);
+      const trimmed = draftName.trim();
+      await signUpForDay(week.weekId, day, trimmed);
+      sessionStorage.setItem(NAME_KEY, trimmed);
+      setSavedName(trimmed);
+      setDraftName(trimmed);
       localStorage.setItem(signupKey(week.weekId, day), "true");
       applyTaken(day, true);
       setMySignups((current) => ({ ...current, [day]: true }));
@@ -128,6 +133,7 @@ export default function Friends() {
   }
 
   function closePrompt() {
+    setDraftName(savedName);
     setSelected(null);
     setCancelDay(null);
   }
@@ -163,7 +169,7 @@ export default function Friends() {
           preferred={weekData.preferred}
           taken={weekData.taken}
           names={Object.fromEntries(
-            CALL_DAYS.map((day) => [day, mySignups[day] ? name : ""]),
+            CALL_DAYS.map((day) => [day, mySignups[day] ? savedName : ""]),
           )}
           showNames={false}
           mine={mySignups}
@@ -171,11 +177,8 @@ export default function Friends() {
             setCancelDay(null);
             setError("");
             setMessage("");
-            if (name.trim()) {
-              submitSignUp(day);
-            } else {
-              setSelected(day);
-            }
+            setDraftName(savedName);
+            setSelected(day);
           }}
           onCancel={(day) => {
             setCancelDay(day);
@@ -198,14 +201,11 @@ export default function Friends() {
               id="name"
               type="text"
               autoComplete="name"
-              value={name}
-              onChange={(event) => {
-                setName(event.target.value);
-                sessionStorage.setItem(NAME_KEY, event.target.value);
-              }}
+              value={draftName}
+              onChange={(event) => setDraftName(event.target.value)}
             />
             <div className="actions">
-              <button type="submit" disabled={!name.trim()}>
+              <button type="submit" disabled={!draftName.trim()}>
                 Confirm
               </button>
               <button type="button" className="ghost" onClick={closePrompt}>
