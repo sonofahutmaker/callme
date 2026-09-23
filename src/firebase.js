@@ -122,6 +122,7 @@ export async function ensureWeek(weekId) {
 export function subscribeToWeek(weekId, onData, onError) {
   const unsubWeek = onSnapshot(
     weekRef(weekId),
+    { includeMetadataChanges: true },
     (snap) => {
       onData({
         ...(snap.data() || emptyWeekData()),

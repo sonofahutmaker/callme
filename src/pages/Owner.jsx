@@ -32,6 +32,7 @@ export default function Owner() {
   const [draft, setDraft] = useState(emptyWeekData().available);
   const [draftPreferred, setDraftPreferred] = useState(emptyWeekData().preferred);
   const hydrated = useRef(false);
+  const pendingTaken = useRef({});
   const [cancelDay, setCancelDay] = useState(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -47,10 +48,21 @@ export default function Owner() {
         unsubWeek = subscribeToWeek(week.weekId, (data) => {
           const available = { ...emptyWeekData().available, ...data.available };
           const preferred = { ...emptyWeekData().preferred, ...data.preferred };
+          const taken = { ...emptyWeekData().taken, ...data.taken };
+          CALL_DAYS.forEach((day) => {
+            if (!(day in pendingTaken.current)) {
+              return;
+            }
+            if (taken[day] === pendingTaken.current[day]) {
+              delete pendingTaken.current[day];
+            } else {
+              taken[day] = pendingTaken.current[day];
+            }
+          });
           setWeekData({
             available,
             preferred,
-            taken: { ...emptyWeekData().taken, ...data.taken },
+            taken,
           });
           if (!hydrated.current) {
             hydrated.current = true;
@@ -95,6 +107,12 @@ export default function Owner() {
     setMessage("");
     try {
       await cancelSignUp(week.weekId, cancelDay);
+      pendingTaken.current[cancelDay] = false;
+      setWeekData((current) => ({
+        ...current,
+        taken: { ...current.taken, [cancelDay]: false },
+      }));
+      setNames((current) => ({ ...current, [cancelDay]: "" }));
       setCancelDay(null);
       setMessage("The call was canceled.");
     } catch (err) {

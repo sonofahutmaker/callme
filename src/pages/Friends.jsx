@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../AuthContext.jsx";
 import { cancelSignUp, ensureWeek, signUpForDay, subscribeToWeek } from "../firebase.js";
@@ -28,6 +28,15 @@ export default function Friends() {
   const [name, setName] = useState(() => sessionStorage.getItem(NAME_KEY) || "");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const pendingTaken = useRef({});
+
+  function applyTaken(day, value) {
+    pendingTaken.current[day] = value;
+    setWeekData((current) => ({
+      ...current,
+      taken: { ...current.taken, [day]: value },
+    }));
+  }
 
   useEffect(() => {
     if (user?.role !== "friends") {
@@ -38,6 +47,16 @@ export default function Friends() {
       .then(() => {
         unsub = subscribeToWeek(week.weekId, (data) => {
           const taken = { ...emptyWeekData().taken, ...data.taken };
+          CALL_DAYS.forEach((day) => {
+            if (!(day in pendingTaken.current)) {
+              return;
+            }
+            if (taken[day] === pendingTaken.current[day]) {
+              delete pendingTaken.current[day];
+            } else {
+              taken[day] = pendingTaken.current[day];
+            }
+          });
           setWeekData({
             available: { ...emptyWeekData().available, ...data.available },
             preferred: { ...emptyWeekData().preferred, ...data.preferred },
@@ -46,6 +65,9 @@ export default function Friends() {
           setMySignups((current) => {
             const next = { ...current };
             CALL_DAYS.forEach((day) => {
+              if (pendingTaken.current[day] === true) {
+                return;
+              }
               if (next[day] && !taken[day]) {
                 localStorage.removeItem(signupKey(week.weekId, day));
                 next[day] = false;
@@ -76,6 +98,7 @@ export default function Friends() {
     try {
       await signUpForDay(week.weekId, day, name);
       localStorage.setItem(signupKey(week.weekId, day), "true");
+      applyTaken(day, true);
       setMySignups((current) => ({ ...current, [day]: true }));
       setMessage("You’re signed up.");
       setSelected(null);
@@ -95,6 +118,7 @@ export default function Friends() {
     try {
       await cancelSignUp(week.weekId, cancelDay);
       localStorage.removeItem(signupKey(week.weekId, cancelDay));
+      applyTaken(cancelDay, false);
       setMySignups((current) => ({ ...current, [cancelDay]: false }));
       setCancelDay(null);
       setMessage("Your signup was canceled.");
