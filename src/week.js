@@ -1,4 +1,7 @@
+import { useEffect, useState } from "react";
+
 const TZ = "America/Los_Angeles";
+const SLOT_END_HOUR = 18;
 const DAYS_SINCE_FRIDAY = {
   Fri: 0,
   Sat: 1,
@@ -20,6 +23,8 @@ export function pacificDateParts(date = new Date()) {
     month: "2-digit",
     day: "2-digit",
     weekday: "short",
+    hour: "2-digit",
+    hour12: false,
   }).formatToParts(date)) {
     if (part.type !== "literal") {
       parts[part.type] = part.value;
@@ -30,8 +35,20 @@ export function pacificDateParts(date = new Date()) {
     month: parts.month,
     day: parts.day,
     weekday: parts.weekday,
+    hour: Number(parts.hour),
     iso: `${parts.year}-${parts.month}-${parts.day}`,
   };
+}
+
+export function isSlotPast(isoDate, now = new Date()) {
+  const current = pacificDateParts(now);
+  if (isoDate < current.iso) {
+    return true;
+  }
+  if (isoDate > current.iso) {
+    return false;
+  }
+  return current.hour >= SLOT_END_HOUR;
 }
 
 export function addIsoDays(isoDate, days) {
@@ -64,7 +81,7 @@ export function getCallWeek(now = new Date()) {
       key,
       iso: dates[key],
       isCallDay: CALL_DAYS.includes(key),
-      isPast: dates[key] < today.iso,
+      isPast: isSlotPast(dates[key], now),
       isToday: dates[key] === today.iso,
     })),
   };
@@ -79,6 +96,15 @@ export function formatDayLabel(isoDate) {
     day: "numeric",
     timeZone: "UTC",
   }).format(utc);
+}
+
+export function useCallWeek() {
+  const [now, setNow] = useState(() => new Date());
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(new Date()), 15_000);
+    return () => window.clearInterval(id);
+  }, []);
+  return getCallWeek(now);
 }
 
 export function emptyWeekData() {

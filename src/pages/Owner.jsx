@@ -13,7 +13,7 @@ import {
   emptyNames,
   emptyWeekData,
   formatDayLabel,
-  getCallWeek,
+  useCallWeek,
 } from "../week.js";
 import Toast from "../components/Toast.jsx";
 import WeekStrip from "../components/WeekStrip.jsx";
@@ -26,7 +26,7 @@ const QUESTIONS = {
 
 export default function Owner() {
   const { user, ready, logout } = useAuth();
-  const week = getCallWeek();
+  const week = useCallWeek();
   const [weekData, setWeekData] = useState(emptyWeekData());
   const [names, setNames] = useState(emptyNames());
   const [draft, setDraft] = useState(emptyWeekData().available);

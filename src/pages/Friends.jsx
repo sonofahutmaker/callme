@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../AuthContext.jsx";
 import { cancelSignUp, ensureWeek, signUpForDay, subscribeToWeek } from "../firebase.js";
-import { CALL_DAYS, emptyWeekData, formatDayLabel, getCallWeek } from "../week.js";
+import { CALL_DAYS, emptyWeekData, formatDayLabel, useCallWeek } from "../week.js";
 import Toast from "../components/Toast.jsx";
 import WeekStrip from "../components/WeekStrip.jsx";
 
@@ -20,7 +20,7 @@ function loadMySignups(weekId) {
 
 export default function Friends() {
   const { user, ready, logout } = useAuth();
-  const week = getCallWeek();
+  const week = useCallWeek();
   const [weekData, setWeekData] = useState(emptyWeekData());
   const [mySignups, setMySignups] = useState(() => loadMySignups(week.weekId));
   const [selected, setSelected] = useState(null);

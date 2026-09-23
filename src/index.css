@@ -144,12 +144,9 @@ button.strip-day:disabled {
   animation: toast-in 0.2s ease;
 }
 
-.toast.booked {
-  background: var(--open);
-}
-
+.toast.booked,
 .toast.canceled {
-  background: var(--closed);
+  background: var(--open);
 }
 
 @keyframes toast-in {
@@ -259,11 +256,6 @@ button.strip-day:disabled {
   background: var(--booked);
 }
 
-.strip-day.today {
-  outline: 2px solid var(--ink);
-  outline-offset: 1px;
-}
-
 .strip-wd {
   font-size: 1.2rem;
   font-weight: 700;
@@ -292,7 +284,7 @@ button.strip-day:disabled {
   align-items: center;
   justify-content: center;
   padding: 1.25rem;
-  background: rgba(77, 11, 0, 0.4);
+  background: rgba(179, 181, 176, 0.4);
 }
 
 .modal {

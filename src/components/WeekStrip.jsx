@@ -21,10 +21,10 @@ export default function WeekStrip({
         const mineBooked = booked && mine[day.key] && !day.isPast;
         const cancelableBooked =
           booked && !day.isPast && Boolean(onCancel) && (allowCancelBooked || mineBooked);
-        const closed = callDay && !available[day.key];
+        const closed = callDay && (!available[day.key] || day.isPast);
         let status = "Off";
         if (day.isPast && callDay) {
-          status = "Past";
+          status = "Unavailable";
         } else if (open) {
           status = preferred[day.key] ? "Preferred by Jenni" : "Open";
         } else if (mineBooked) {

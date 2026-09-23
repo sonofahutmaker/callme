@@ -9,7 +9,7 @@ import {
   runTransaction,
   setDoc,
 } from "firebase/firestore";
-import { emptyNames, emptyWeekData } from "./week.js";
+import { emptyNames, emptyWeekData, getCallWeek, isSlotPast } from "./week.js";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -163,6 +163,10 @@ export async function signUpForDay(weekId, day, name) {
   const trimmed = name.trim();
   if (!trimmed) {
     throw new Error("Enter your name");
+  }
+  const week = getCallWeek();
+  if (week.weekId !== weekId || isSlotPast(week.dates[day])) {
+    throw new Error("That day is no longer available");
   }
   const publicRef = weekRef(weekId);
   const privateRef = nameRef(weekId, day);
