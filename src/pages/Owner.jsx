@@ -34,7 +34,6 @@ export default function Owner() {
   const hydrated = useRef(false);
   const [cancelDay, setCancelDay] = useState(null);
   const [message, setMessage] = useState("");
-  const [toastTone, setToastTone] = useState("");
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -97,7 +96,6 @@ export default function Owner() {
     try {
       await cancelSignUp(week.weekId, cancelDay);
       setCancelDay(null);
-      setToastTone("canceled");
       setMessage("The call was canceled.");
     } catch (err) {
       setError(err.message);
@@ -107,7 +105,7 @@ export default function Owner() {
   return (
     <main className="page page-schedule">
       <header>
-        <div className="top">
+        <div className="top top-single">
           <h1>Your week</h1>
           <button type="button" className="ghost" onClick={logout}>
             Log out
@@ -195,7 +193,7 @@ export default function Owner() {
           </div>
         </div>
       ) : null}
-      <Toast message={message} tone={toastTone} onDismiss={() => setMessage("")} />
+      <Toast message={message} onDismiss={() => setMessage("")} />
     </main>
   );
 }

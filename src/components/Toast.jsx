@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 
-export default function Toast({ message, tone, onDismiss }) {
+export default function Toast({ message, onDismiss }) {
   useEffect(() => {
     if (!message) {
       return undefined;
@@ -14,7 +14,7 @@ export default function Toast({ message, tone, onDismiss }) {
   }
 
   return (
-    <div className={["toast", tone].filter(Boolean).join(" ")} role="status" aria-live="polite">
+    <div className="toast" role="status" aria-live="polite">
       {message}
     </div>
   );

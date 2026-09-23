@@ -75,6 +75,16 @@ h2 {
   flex-shrink: 0;
 }
 
+.top-single {
+  align-items: center;
+}
+
+.top-single .ghost {
+  margin-top: 0;
+  padding: 0.4rem 0.85rem;
+  font-size: 0.9rem;
+}
+
 label {
   display: block;
   font-size: 0.9rem;
@@ -135,18 +145,13 @@ button.strip-day:disabled {
   z-index: 30;
   width: min(calc(100% - 2rem), 22rem);
   padding: 0.85rem 1.1rem;
-  background: var(--paper);
+  background: var(--open);
   color: var(--ink);
   border: 2px solid var(--ink);
   border-radius: 1rem;
   font-weight: 600;
   text-align: center;
   animation: toast-in 0.2s ease;
-}
-
-.toast.booked,
-.toast.canceled {
-  background: var(--open);
 }
 
 @keyframes toast-in {
@@ -343,6 +348,10 @@ button.strip-day:hover {
 
   .top .ghost {
     margin-top: 0.4rem;
+  }
+
+  .top-single .ghost {
+    margin-top: 0;
   }
 
   .quiz-grid {

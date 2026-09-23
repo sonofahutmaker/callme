@@ -28,7 +28,6 @@ export default function Friends() {
   const [name, setName] = useState(() => sessionStorage.getItem(NAME_KEY) || "");
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-  const [toastTone, setToastTone] = useState("");
 
   useEffect(() => {
     if (user?.role !== "friends") {
@@ -78,7 +77,6 @@ export default function Friends() {
       await signUpForDay(week.weekId, day, name);
       localStorage.setItem(signupKey(week.weekId, day), "true");
       setMySignups((current) => ({ ...current, [day]: true }));
-      setToastTone("booked");
       setMessage("You’re signed up.");
       setSelected(null);
     } catch (err) {
@@ -99,7 +97,6 @@ export default function Friends() {
       localStorage.removeItem(signupKey(week.weekId, cancelDay));
       setMySignups((current) => ({ ...current, [cancelDay]: false }));
       setCancelDay(null);
-      setToastTone("canceled");
       setMessage("Your signup was canceled.");
     } catch (err) {
       setError(err.message);
@@ -209,7 +206,7 @@ export default function Friends() {
           </div>
         </div>
       ) : null}
-      <Toast message={message} tone={toastTone} onDismiss={() => setMessage("")} />
+      <Toast message={message} onDismiss={() => setMessage("")} />
     </main>
   );
 }
