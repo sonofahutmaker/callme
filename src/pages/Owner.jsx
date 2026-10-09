@@ -41,6 +41,7 @@ export default function Owner() {
     if (user?.role !== "owner") {
       return undefined;
     }
+    hydrated.current = false;
     let unsubWeek = () => {};
     let unsubNames = () => {};
     ensureWeek(week.weekId)

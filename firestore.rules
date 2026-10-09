@@ -10,10 +10,13 @@ service cloud.firestore {
     function isFriend() {
       return signedIn() && request.auth.token.email == "friends@callme.local";
     }
+    function availabilityNotSaved(data) {
+      return !("availabilitySaved" in data) || data.availabilitySaved == false;
+    }
     function emptyWeek() {
-      return request.resource.data.available.tue == false
-        && request.resource.data.available.wed == false
-        && request.resource.data.available.thu == false
+      return request.resource.data.available.tue == true
+        && request.resource.data.available.wed == true
+        && request.resource.data.available.thu == true
         && request.resource.data.taken.tue == false
         && request.resource.data.taken.wed == false
         && request.resource.data.taken.thu == false
@@ -23,6 +26,24 @@ service cloud.firestore {
             request.resource.data.preferred.tue == false
             && request.resource.data.preferred.wed == false
             && request.resource.data.preferred.thu == false
+          )
+        )
+        && availabilityNotSaved(request.resource.data);
+    }
+    function uninitializedWeek() {
+      return resource.data.available.tue == false
+        && resource.data.available.wed == false
+        && resource.data.available.thu == false
+        && resource.data.taken.tue == false
+        && resource.data.taken.wed == false
+        && resource.data.taken.thu == false
+        && availabilityNotSaved(resource.data)
+        && (
+          !("preferred" in resource.data)
+          || (
+            resource.data.preferred.tue == false
+            && resource.data.preferred.wed == false
+            && resource.data.preferred.thu == false
           )
         );
     }
@@ -47,6 +68,15 @@ service cloud.firestore {
           && request.resource.data.preferred.wed == resource.data.preferred.wed
           && request.resource.data.preferred.thu == resource.data.preferred.thu
         );
+    }
+    function openingDefaultWeek() {
+      return uninitializedWeek()
+        && request.resource.data.available.tue == true
+        && request.resource.data.available.wed == true
+        && request.resource.data.available.thu == true
+        && preservedTaken()
+        && preservedPreferred()
+        && availabilityNotSaved(request.resource.data);
     }
     function noUnsetTaken() {
       return (!resource.data.taken.tue || request.resource.data.taken.tue == true)
@@ -91,6 +121,7 @@ service cloud.firestore {
     match /weeks/{weekId} {
       allow read: if signedIn();
       allow create: if signedIn() && emptyWeek();
+      allow update: if signedIn() && openingDefaultWeek();
       allow update: if isOwner()
         && (
           preservedTaken()

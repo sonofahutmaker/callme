@@ -59,11 +59,16 @@ export function addIsoDays(isoDate, days) {
 
 export function getCallWeek(now = new Date()) {
   const today = pacificDateParts(now);
-  const offset = DAYS_SINCE_FRIDAY[today.weekday];
-  if (offset === undefined) {
-    throw new Error(`Unexpected weekday: ${today.weekday}`);
+  const weekStart = { iso: today.iso, weekday: today.weekday };
+  if (today.weekday === "Thu" && today.hour >= SLOT_END_HOUR) {
+    weekStart.iso = addIsoDays(today.iso, 1);
+    weekStart.weekday = "Fri";
   }
-  const friday = addIsoDays(today.iso, -offset);
+  const offset = DAYS_SINCE_FRIDAY[weekStart.weekday];
+  if (offset === undefined) {
+    throw new Error(`Unexpected weekday: ${weekStart.weekday}`);
+  }
+  const friday = addIsoDays(weekStart.iso, -offset);
   const dates = {
     sun: addIsoDays(friday, 2),
     mon: addIsoDays(friday, 3),
@@ -109,7 +114,7 @@ export function useCallWeek() {
 
 export function emptyWeekData() {
   return {
-    available: { tue: false, wed: false, thu: false },
+    available: { tue: true, wed: true, thu: true },
     preferred: { tue: false, wed: false, thu: false },
     taken: { tue: false, wed: false, thu: false },
   };

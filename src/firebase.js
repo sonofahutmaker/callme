@@ -9,7 +9,7 @@ import {
   runTransaction,
   setDoc,
 } from "firebase/firestore";
-import { emptyNames, emptyWeekData, getCallWeek, isSlotPast } from "./week.js";
+import { CALL_DAYS, emptyNames, emptyWeekData, getCallWeek, isSlotPast } from "./week.js";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -114,8 +114,21 @@ function namesCollection(weekId) {
 export async function ensureWeek(weekId) {
   const ref = weekRef(weekId);
   const snap = await getDoc(ref);
+  const defaults = emptyWeekData();
   if (!snap.exists()) {
-    await setDoc(ref, emptyWeekData());
+    await setDoc(ref, defaults);
+    return;
+  }
+  const data = snap.data();
+  if (data.availabilitySaved) {
+    return;
+  }
+  const taken = { ...defaults.taken, ...data.taken };
+  const available = { ...defaults.available, ...data.available };
+  const untouched =
+    CALL_DAYS.every((day) => !taken[day]) && CALL_DAYS.every((day) => available[day] === false);
+  if (untouched) {
+    await setDoc(ref, { available: defaults.available }, { merge: true });
   }
 }
 
@@ -153,10 +166,15 @@ export async function saveAvailability(weekId, available, preferred) {
   await runTransaction(getDb(), async (transaction) => {
     const snap = await transaction.get(ref);
     if (!snap.exists()) {
-      transaction.set(ref, { ...emptyWeekData(), available, preferred });
+      transaction.set(ref, {
+        ...emptyWeekData(),
+        available,
+        preferred,
+        availabilitySaved: true,
+      });
       return;
     }
-    transaction.update(ref, { available, preferred });
+    transaction.update(ref, { available, preferred, availabilitySaved: true });
   });
 }
 
