@@ -30,7 +30,7 @@ export default function Login() {
     try {
       await loginWithPassword(password);
     } catch {
-      setError("That password didn’t match.");
+      setError("Wrong password");
     } finally {
       setBusy(false);
     }
